@@ -1,5 +1,6 @@
 import pygame
 import random
+from collections import deque
 
 # Configurações iniciais
 pygame.init()
@@ -35,15 +36,76 @@ def desenhar_ambiente():
     texto = fonte.render(f"Score: {score}", True, PRETO)
     tela.blit(texto, (10, 10))
 
+# Heurística de distância de Manhattan
+def distancia_manhattan(pos1, pos2):
+    return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
+# Função de busca A* usando deque
+def buscar_sujeira():
+    direcoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Direções possíveis: direita, baixo, esquerda, cima
+    inicio = (posicao_robo[0], posicao_robo[1])
+    
+    # Encontrar todos os quadrados sujos
+    alvos = [(i, j) for i in range(5) for j in range(5) if ambiente[i][j] == 1]
+    if not alvos:  # Caso não haja mais sujeira
+        return None
+    
+    # Escolher o alvo mais próximo com base na heurística
+    alvo = min(alvos, key=lambda x: distancia_manhattan(inicio, x))
+    
+    # Fila para A* usando deque (ordenada manualmente por f_score)
+    fila = deque([(0, 0, inicio)])  # (f_score, g_score, posição)
+    veio_de = {}
+    custo = {inicio: 0}
+    visitado = set()
+    
+    while fila:
+        # Ordenar a fila por f_score (menor custo primeiro)
+        fila = deque(sorted(fila, key=lambda x: x[0]))
+        f, g, atual = fila.popleft()
+        
+        # Verificar se a célula contém sujeira
+        if ambiente[atual[0]][atual[1]] == 1:
+            # Reconstruir o caminho até o alvo
+            caminho = []
+            while atual in veio_de:
+                caminho.append(atual)
+                atual = veio_de[atual]
+            caminho.reverse()
+            return caminho[0] if caminho else None  # Retorna o próximo passo
+        
+        if atual in visitado:
+            continue
+        visitado.add(atual)
+        
+        for direcao in direcoes:
+            nova_linha = atual[0] + direcao[0]
+            nova_coluna = atual[1] + direcao[1]
+            nova_pos = (nova_linha, nova_coluna)
+            
+            if 0 <= nova_linha < 5 and 0 <= nova_coluna < 5:
+                novo_g = g + 1
+                if nova_pos not in custo or novo_g < custo[nova_pos]:
+                    custo[nova_pos] = novo_g
+                    h = distancia_manhattan(nova_pos, alvo)
+                    f = novo_g + h
+                    fila.append((f, novo_g, nova_pos))
+                    veio_de[nova_pos] = atual
+    
+    return None  # Caso não haja mais sujeira no ambiente
+
 # Função para mover o robô
 def mover_robo():
     global posicao_robo, score
-    direcoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Direções possíveis: direita, baixo, esquerda, cima
-    direcao = random.choice(direcoes)
-    nova_linha = posicao_robo[0] + direcao[0]
-    nova_coluna = posicao_robo[1] + direcao[1]
-    # Verificar se a nova posição está dentro do ambiente
-    if 0 <= nova_linha < 5 and 0 <= nova_coluna < 5:
+    
+    # Se a posição inicial estiver suja, limpar antes de buscar sujeira
+    if ambiente[posicao_robo[0]][posicao_robo[1]] == 1:
+        ambiente[posicao_robo[0]][posicao_robo[1]] = 0
+        score += 1
+    
+    proxima_posicao = buscar_sujeira()
+    if proxima_posicao:
+        nova_linha, nova_coluna = proxima_posicao
         posicao_robo = [nova_linha, nova_coluna]
         # Verificar se há sujeira na nova posição
         if ambiente[nova_linha][nova_coluna] == 1:
@@ -57,10 +119,11 @@ while rodando:
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
             rodando = False
-
+    
     mover_robo()
     desenhar_ambiente()
     pygame.display.flip()
     clock.tick(2)  # Controla a velocidade do robô (2 movimentos por segundo)
 
 pygame.quit()
+a
