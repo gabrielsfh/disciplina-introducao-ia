@@ -1,4 +1,12 @@
+''' Em sua implementação, cada cromossomo deve representar um conjunto de itens. E cada gene do
+cromossomo deve representar um único item. Utilize a estrutura de dados que desejar para implementar os
+cromossomos (listas, tuplas etc).
+O fitness de cada cromossomo deve ser a soma total dos valores de cada item. Implemente todos os
+operadores genéticos e encontre uma boa solução. Envie seu código, a melhor solução enontrada e o valor
+de fitness dessa solução pelo portal. '''
+
 import random 
+
 
 class Individuo():
     def __init__(self, geracao = 0):
@@ -6,16 +14,16 @@ class Individuo():
         self.geracao: int = geracao
         self.cromossomo: list = []
 
-        for i in range(len(target)):
-            self.cromossomo.append(random.choice(chars))
+        for i in range(filtroKG):
+            self.cromossomo.append(random.choice(filtroKG))
         
     def avaliacao(self):
-        valor = 0 
+        valor = 0
 
-        for i in range(len(self.cromossomo)):
-            if self.cromossomo[i] == target[i]:
+        for i in range(self.cromossomo):
+            if self.cromossomo >= 15:
                 valor += 1
-        
+
         self.fitness = valor
     
     def crossover(self, outro_individuo):
@@ -132,11 +140,22 @@ class AlgoritmoGenetico():
         print(f"Nome final: {''.join(self.melhor_solucao.cromossomo)}")
 
 if __name__=="__main__":
-    chars: str = "abcdefghijklmnopqtrstuvvwxyz "
-    target: str = "digamos que o mundo é um lugar insanamente insano"
+    kg: list = []
+
+    kg = [12,1,4,1,2]
+    preco = [4,2,10,1,2]
+
+    itens = list(zip(kg, preco))
+    filtroKG = [x[0] for x in itens]
+
+    print(filtroKG)
+
+    '''nao existe target avaliacao modificar'''
+
     taxa_mutacao = 0.01
     geracoes = 90000
     tam_pop = 100
     ag = AlgoritmoGenetico(tam_pop)
 
     ag.resolver(taxa_mutacao, geracoes)
+
